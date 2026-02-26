@@ -1,0 +1,42 @@
+/* Global classic UI styles with sharp-edged Bootstrap-compatible visuals. */
+body {
+  background-color: #f5f6f8;
+  font-family: Arial, sans-serif;
+}
+
+.navbar,
+.card,
+.btn,
+.form-control,
+.table,
+.alert,
+.badge {
+  border-radius: 0 !important;
+}
+
+.card {
+  border: 1px solid #c9ced6;
+  box-shadow: none;
+}
+
+.btn {
+  border-width: 1px;
+  font-weight: 600;
+}
+
+.section-title {
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  border-left: 4px solid #0d6efd;
+  padding-left: 0.5rem;
+}
+
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: none;
+}
