@@ -28,7 +28,7 @@ A complete Node.js + Express + MongoDB web application with **two portals**:
 - Upload `.xlsx` training file from admin dashboard.
 - Parse and normalize data.
 - Train a Feedforward Neural Network on backend.
-- Save model and normalization metadata.
+- Save model and normalization metadata with server-side text encoders.
 - Predict required plates with a 10% buffer stock.
 
 ---
@@ -44,6 +44,23 @@ A complete Node.js + Express + MongoDB web application with **two portals**:
 - Auth: bcrypt + express-session
 - ML: TensorFlow.js (`@tensorflow/tfjs`)
 - Upload + Parsing: multer + xlsx
+
+---
+
+
+## Text Input Support for ML
+
+The ML module accepts **text values** and encodes them on the server for both:
+- Admin prediction form inputs
+- Excel training files
+
+Examples:
+- `dayOfWeek`: Monday, Tue, 1
+- `timeOfDay`: Breakfast, Lunch, Dinner
+- `foodType`: Idli, Rice, Noodles (any text)
+- `eventDay`: Yes/No, 1/0
+
+If a prediction uses a category that was never seen during training, the app returns a clear validation error so you can retrain with broader data.
 
 ---
 

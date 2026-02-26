@@ -30,6 +30,7 @@ async function signup(req, res) {
       branch
     });
 
+    req.session.admin = null;
     req.session.student = {
       id: student._id,
       name: student.name,
@@ -38,7 +39,9 @@ async function signup(req, res) {
       branch: student.branch
     };
 
-    return res.redirect('/student/dashboard');
+    return req.session.save(() => {
+      res.redirect('/student/dashboard');
+    });
   } catch (error) {
     return res.render('student/signup', { error: error.message });
   }
@@ -58,6 +61,7 @@ async function login(req, res) {
       return res.render('student/login', { error: 'Invalid email or password.' });
     }
 
+    req.session.admin = null;
     req.session.student = {
       id: student._id,
       name: student.name,
@@ -66,14 +70,17 @@ async function login(req, res) {
       branch: student.branch
     };
 
-    return res.redirect('/student/dashboard');
+    return req.session.save(() => {
+      res.redirect('/student/dashboard');
+    });
   } catch (error) {
     return res.render('student/login', { error: error.message });
   }
 }
 
 function logout(req, res) {
-  req.session.destroy(() => {
+  req.session.student = null;
+  req.session.save(() => {
     res.redirect('/student/login');
   });
 }

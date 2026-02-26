@@ -1,4 +1,4 @@
-// Handles admin login and optional bootstrap account creation.
+// Handles admin login/logout with stable session persistence.
 const bcrypt = require('bcrypt');
 const Admin = require('../models/Admin');
 
@@ -20,15 +20,21 @@ async function login(req, res) {
       return res.render('admin/login', { error: 'Invalid admin credentials.' });
     }
 
+    // Keep role separation clean in a shared session store.
+    req.session.student = null;
     req.session.admin = { id: admin._id, name: admin.name, email: admin.email };
-    return res.redirect('/admin/dashboard');
+
+    return req.session.save(() => {
+      res.redirect('/admin/dashboard');
+    });
   } catch (error) {
     return res.render('admin/login', { error: error.message });
   }
 }
 
 function logout(req, res) {
-  req.session.destroy(() => {
+  req.session.admin = null;
+  req.session.save(() => {
     res.redirect('/admin/login');
   });
 }

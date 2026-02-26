@@ -28,11 +28,13 @@ app.set('views', path.join(__dirname, 'views'));
 // Session configuration for login persistence.
 app.use(
   session({
+    name: 'canteen.sid',
     secret: process.env.SESSION_SECRET || 'fallback-secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
+      sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 8
     }
   })

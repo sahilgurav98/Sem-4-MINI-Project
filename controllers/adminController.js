@@ -34,6 +34,9 @@ async function addFoodItem(req, res) {
 
     return res.redirect('/admin/dashboard');
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     const [orders, foodItems] = await Promise.all([Order.find().sort({ timestamp: -1 }), FoodItem.find().sort({ name: 1 })]);
     return res.render('admin/dashboard', {
       admin: req.session.admin,
@@ -88,6 +91,9 @@ async function uploadTrainingData(req, res) {
       error: null
     });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     const [orders, foodItems] = await Promise.all([Order.find().sort({ timestamp: -1 }), FoodItem.find().sort({ name: 1 })]);
     return res.render('admin/dashboard', {
       admin: req.session.admin,
@@ -114,6 +120,9 @@ async function runPrediction(req, res) {
       error: null
     });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
     const [orders, foodItems] = await Promise.all([Order.find().sort({ timestamp: -1 }), FoodItem.find().sort({ name: 1 })]);
     return res.render('admin/dashboard', {
       admin: req.session.admin,
