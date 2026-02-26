@@ -35,11 +35,14 @@ A complete Node.js + Express + MongoDB web application with **two portals**:
 
 ## Tech Stack
 
+
+> Note: This project intentionally uses pure `@tensorflow/tfjs` (instead of `@tensorflow/tfjs-node`) to avoid native binary/toolchain install failures on newer Node.js/Windows environments.
+
 - Frontend: EJS, Bootstrap, custom CSS
 - Backend: Node.js, Express.js
 - Database: MongoDB + Mongoose
 - Auth: bcrypt + express-session
-- ML: TensorFlow.js (`@tensorflow/tfjs-node`)
+- ML: TensorFlow.js (`@tensorflow/tfjs`)
 - Upload + Parsing: multer + xlsx
 
 ---

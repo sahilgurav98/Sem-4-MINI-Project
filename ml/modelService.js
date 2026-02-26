@@ -1,11 +1,13 @@
 // TensorFlow.js service for training and predicting food demand.
+// Uses pure JavaScript TensorFlow backend for compatibility on Node 22 and Windows
+// without native build tooling.
 const path = require('path');
 const fs = require('fs');
-const tf = require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs');
 
 const MODEL_DIR = path.join(__dirname, 'saved-model');
-const MODEL_PATH = `file://${MODEL_DIR}`;
 const META_FILE = path.join(MODEL_DIR, 'meta.json');
+const MODEL_DATA_FILE = path.join(MODEL_DIR, 'model-data.json');
 
 // Encodes categorical data into numeric values for model input.
 function encodeFeatures(row) {
@@ -58,6 +60,49 @@ function normalizeDataset(inputs, outputs, stats) {
   return { normalizedInputs, normalizedOutputs };
 }
 
+// Creates the feedforward neural network architecture.
+function buildModel() {
+  const model = tf.sequential();
+  model.add(tf.layers.dense({ units: 16, inputShape: [5], activation: 'relu' }));
+  model.add(tf.layers.dense({ units: 8, activation: 'relu' }));
+  model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+  model.compile({ optimizer: tf.train.adam(0.01), loss: 'meanSquaredError' });
+  return model;
+}
+
+// Saves model architecture and weights in JSON format, avoiding native tfjs-node I/O.
+async function saveModelToDisk(model) {
+  if (!fs.existsSync(MODEL_DIR)) {
+    fs.mkdirSync(MODEL_DIR, { recursive: true });
+  }
+
+  const modelTopologyRaw = model.toJSON(null, false);
+  const modelTopology = typeof modelTopologyRaw === 'string' ? JSON.parse(modelTopologyRaw) : modelTopologyRaw;
+  const weightTensors = model.getWeights();
+
+  const weights = await Promise.all(
+    weightTensors.map(async (tensor) => ({
+      shape: tensor.shape,
+      data: Array.from(await tensor.data())
+    }))
+  );
+
+  fs.writeFileSync(MODEL_DATA_FILE, JSON.stringify({ modelTopology, weights }, null, 2));
+}
+
+// Restores model architecture and weights from JSON files.
+async function loadModelFromDisk() {
+  const modelData = JSON.parse(fs.readFileSync(MODEL_DATA_FILE, 'utf8'));
+  const model = await tf.models.modelFromJSON(modelData.modelTopology);
+
+  const weightTensors = modelData.weights.map((weight) => tf.tensor(weight.data, weight.shape));
+  model.setWeights(weightTensors);
+  model.compile({ optimizer: tf.train.adam(0.01), loss: 'meanSquaredError' });
+
+  weightTensors.forEach((tensor) => tensor.dispose());
+  return model;
+}
+
 async function trainModelFromRows(rows) {
   if (!rows.length) {
     throw new Error('Training data is empty. Please upload a valid Excel file.');
@@ -66,31 +111,27 @@ async function trainModelFromRows(rows) {
   const inputs = rows.map(encodeFeatures);
   const outputs = rows.map((row) => Number(row.platesRequired));
 
+  const invalidOutput = outputs.some((value) => Number.isNaN(value));
+  if (invalidOutput) {
+    throw new Error('Invalid numeric value in platesRequired column.');
+  }
+
   const stats = buildNormalizationStats(inputs, outputs);
   const { normalizedInputs, normalizedOutputs } = normalizeDataset(inputs, outputs, stats);
 
   const xs = tf.tensor2d(normalizedInputs);
   const ys = tf.tensor2d(normalizedOutputs, [normalizedOutputs.length, 1]);
 
-  const model = tf.sequential();
-  model.add(tf.layers.dense({ units: 16, inputShape: [5], activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 8, activation: 'relu' }));
-  model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
-
-  model.compile({ optimizer: tf.train.adam(0.01), loss: 'meanSquaredError' });
+  const model = buildModel();
 
   await model.fit(xs, ys, {
     epochs: 150,
-    batchSize: Math.min(8, normalizedInputs.length),
+    batchSize: Math.max(1, Math.min(8, normalizedInputs.length)),
     shuffle: true,
     verbose: 0
   });
 
-  if (!fs.existsSync(MODEL_DIR)) {
-    fs.mkdirSync(MODEL_DIR, { recursive: true });
-  }
-
-  await model.save(MODEL_PATH);
+  await saveModelToDisk(model);
   fs.writeFileSync(META_FILE, JSON.stringify(stats, null, 2));
 
   tf.dispose([xs, ys]);
@@ -98,11 +139,11 @@ async function trainModelFromRows(rows) {
 }
 
 async function predictDemand(inputFeatures) {
-  if (!fs.existsSync(path.join(MODEL_DIR, 'model.json')) || !fs.existsSync(META_FILE)) {
+  if (!fs.existsSync(MODEL_DATA_FILE) || !fs.existsSync(META_FILE)) {
     throw new Error('Model is not trained yet. Upload training data first.');
   }
 
-  const model = await tf.loadLayersModel(`${MODEL_PATH}/model.json`);
+  const model = await loadModelFromDisk();
   const stats = JSON.parse(fs.readFileSync(META_FILE, 'utf8'));
 
   const encodedInput = encodeFeatures(inputFeatures);
@@ -116,7 +157,6 @@ async function predictDemand(inputFeatures) {
 
   const predictedPlates = denormalizeValue(normalizedPrediction, stats.outputMin, stats.outputMax);
   const roundedPrediction = Math.max(0, Math.round(predictedPlates));
-
   const buffer = Math.ceil(roundedPrediction * 0.1);
 
   tf.dispose([inputTensor, predictionTensor]);
