@@ -1,0 +1,24 @@
+<%- include('../layouts/header', { title: 'Student Signup' }) %>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card p-4">
+        <h3 class="section-title">Student Signup</h3>
+        <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+        <form method="POST" action="/student/signup">
+          <div class="mb-3"><label class="form-label">Name</label><input class="form-control" name="name" required /></div>
+          <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email" required /></div>
+          <div class="mb-3"><label class="form-label">Password</label><input type="password" class="form-control" name="password" required /></div>
+          <div class="mb-3"><label class="form-label">Registration Number</label><input class="form-control" name="registrationNo" required /></div>
+          <div class="row">
+            <div class="col-md-6 mb-3"><label class="form-label">Year</label><input class="form-control" name="year" required /></div>
+            <div class="col-md-6 mb-3"><label class="form-label">Branch</label><input class="form-control" name="branch" required /></div>
+          </div>
+          <button class="btn btn-primary w-100" type="submit">Signup</button>
+        </form>
+        <a href="/student/login" class="btn btn-outline-secondary w-100 mt-2">Already have an account? Login</a>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../layouts/footer') %>

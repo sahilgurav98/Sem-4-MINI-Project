@@ -1,0 +1,55 @@
+<%- include('../layouts/header', { title: 'Student Dashboard' }) %>
+<nav class="navbar bg-white border-bottom">
+  <div class="container d-flex justify-content-between">
+    <span class="navbar-brand mb-0 h1">Student Portal</span>
+    <form method="POST" action="/student/logout"><button class="btn btn-outline-danger" type="submit">Logout</button></form>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div class="card p-3 mb-3">
+    <h5 class="section-title">Student Details (Auto-Filled)</h5>
+    <div class="row">
+      <div class="col-md-3"><strong>Name:</strong> <%= student.name %></div>
+      <div class="col-md-3"><strong>Reg No:</strong> <%= student.registrationNo %></div>
+      <div class="col-md-3"><strong>Year:</strong> <%= student.year %></div>
+      <div class="col-md-3"><strong>Branch:</strong> <%= student.branch %></div>
+    </div>
+  </div>
+
+  <div class="card p-3">
+    <h5 class="section-title">Place Food Order</h5>
+    <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+    <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+    <form method="POST" action="/student/order">
+      <div class="table-responsive">
+        <table class="table table-bordered bg-white">
+          <thead class="table-light">
+            <tr>
+              <th>Food Item</th>
+              <th>Price</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!foodItems.length) { %>
+              <tr><td colspan="3" class="text-center">No food items available right now.</td></tr>
+            <% } %>
+            <% foodItems.forEach((item) => { %>
+              <tr>
+                <td><%= item.name %></td>
+                <td>₹<%= item.price.toFixed(2) %></td>
+                <td>
+                  <input type="number" name="items[<%= item.name %>]" class="form-control" min="0" value="0" />
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-primary" type="submit">Submit Order</button>
+    </form>
+  </div>
+</div>
+<%- include('../layouts/footer') %>
